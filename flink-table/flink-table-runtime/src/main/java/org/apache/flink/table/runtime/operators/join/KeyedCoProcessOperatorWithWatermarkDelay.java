@@ -24,6 +24,9 @@ import org.apache.flink.streaming.api.operators.co.KeyedCoProcessOperator;
 import org.apache.flink.streaming.api.watermark.Watermark;
 import org.apache.flink.util.Preconditions;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.Serializable;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -31,7 +34,7 @@ import java.util.function.Consumer;
 /** A {@link KeyedCoProcessOperator} that supports holding back watermarks with a static delay. */
 public class KeyedCoProcessOperatorWithWatermarkDelay<K, IN1, IN2, OUT>
         extends KeyedCoProcessOperator<K, IN1, IN2, OUT> {
-
+    private static final Logger LOGGER = LoggerFactory.getLogger(KeyedCoProcessOperatorWithWatermarkDelay.class);
     private static final long serialVersionUID = -7435774708099223442L;
 
     private final Consumer<Watermark> emitter;
@@ -62,6 +65,8 @@ public class KeyedCoProcessOperatorWithWatermarkDelay<K, IN1, IN2, OUT>
         if (timeServiceManager.isPresent()) {
             timeServiceManager.get().advanceWatermark(mark);
         }
+        // watermark = 上游wm最小值减去最大的等待时间
+//        LOGGER.info("before watermark ======= " + mark);
         emitter.accept(mark);
     }
 }

@@ -30,7 +30,7 @@ import static org.apache.flink.util.Preconditions.checkNotNull;
  *
  * <ul>
  *   <li/>fire when the watermark passes the end of the window ({@link
- *       EventTimeTriggers#afterEndOfWindow()}),
+ *       EventTimeTriggers#afterEndOfWindow()})
  * </ul>
  *
  * <p>In the first case, the trigger can also specify an <tt>early</tt> and a <tt>late</tt> trigger.

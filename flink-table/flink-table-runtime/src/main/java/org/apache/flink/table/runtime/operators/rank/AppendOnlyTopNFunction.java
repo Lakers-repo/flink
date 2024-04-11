@@ -184,6 +184,8 @@ public class AppendOnlyTopNFunction extends AbstractTopNFunction {
                 currentRow = input;
                 findsSortKey = true;
             } else if (findsSortKey) {
+                // 优化建议
+                // recordsIter 可能会残余一些数据
                 Iterator<RowData> recordsIter = records.iterator();
                 while (recordsIter.hasNext() && isInRankEnd(currentRank)) {
                     RowData prevRow = recordsIter.next();

@@ -22,9 +22,13 @@ import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.runtime.operators.join.FlinkJoinType;
 import org.apache.flink.table.runtime.typeutils.InternalTypeInfo;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /** The function to execute row(event) time interval stream inner-join. */
 public final class RowTimeIntervalJoin extends TimeIntervalJoin {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(RowTimeIntervalJoin.class);
     private static final long serialVersionUID = -2923709329817468698L;
 
     private final int leftTimeIdx;
@@ -64,6 +68,7 @@ public final class RowTimeIntervalJoin extends TimeIntervalJoin {
 
     @Override
     void updateOperatorTime(Context ctx) {
+//        LOGGER.info("after watermark" + ctx.timerService().currentWatermark());
         leftOperatorTime =
                 ctx.timerService().currentWatermark() > 0
                         ? ctx.timerService().currentWatermark()

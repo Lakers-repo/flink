@@ -201,6 +201,8 @@ public class TemporalRowTimeJoinOperator extends BaseTwoInputStreamOperatorWithS
         registeredTimer.clear();
         long lastUnprocessedTime = emitResultAndCleanUpState(timerService.currentWatermark());
         if (lastUnprocessedTime < Long.MAX_VALUE) {
+
+            // 重新注册新的timer，用当前还未处理数据的最小时间
             registerTimer(lastUnprocessedTime);
         }
 
@@ -209,6 +211,9 @@ public class TemporalRowTimeJoinOperator extends BaseTwoInputStreamOperatorWithS
             if (lastUnprocessedTime < Long.MAX_VALUE || !rightState.isEmpty()) {
                 registerProcessingCleanupTimer();
             } else {
+                // 如果上游没有数据了，或者右表没有数据了，就删除timer，并清理state里面的index
+                // right state在这里不可能为空，因为能走到onEventTime,
+                // 说明左右表都有大于或者等于当前watermark的数据，说明right state里面有数据
                 cleanupLastTimer();
                 nextLeftIndex.clear();
             }
@@ -228,6 +233,7 @@ public class TemporalRowTimeJoinOperator extends BaseTwoInputStreamOperatorWithS
      *     have been processed.
      */
     private long emitResultAndCleanUpState(long currentWatermark) throws Exception {
+        // 将右表的数据按时间升序排序
         List<RowData> rightRowsSorted = getRightRowSorted(rightRowtimeComparator);
         long lastUnprocessedTime = Long.MAX_VALUE;
 
@@ -241,9 +247,11 @@ public class TemporalRowTimeJoinOperator extends BaseTwoInputStreamOperatorWithS
             RowData leftRow = entry.getValue();
             long leftTime = getLeftTime(leftRow);
             if (leftTime <= currentWatermark) {
+                // 将小于当前watermark的数据放入orderedLeftRecords中，并将state中的数据删除
                 orderedLeftRecords.put(leftSeq, leftRow);
                 leftIterator.remove();
             } else {
+                // 计算最小的未处理的时间
                 lastUnprocessedTime = Math.min(lastUnprocessedTime, leftTime);
             }
         }
@@ -253,6 +261,7 @@ public class TemporalRowTimeJoinOperator extends BaseTwoInputStreamOperatorWithS
         orderedLeftRecords.forEach(
                 (leftSeq, leftRow) -> {
                     long leftTime = getLeftTime(leftRow);
+                    // 二分查找右表中最接近左表时间的数据
                     Optional<RowData> rightRow = latestRightRowToJoin(rightRowsSorted, leftTime);
                     if (rightRow.isPresent() && RowDataUtil.isAccumulateMsg(rightRow.get())) {
                         if (joinCondition.apply(leftRow, rightRow.get())) {
@@ -263,6 +272,8 @@ public class TemporalRowTimeJoinOperator extends BaseTwoInputStreamOperatorWithS
                             }
                         }
                     } else {
+                        // 如果没查到数据或者数据不是accumulate类型的数据, inner join就不发出数据，left outer join发出null数据
+                        // 右表就算有回撤消息，就算和左表join上了，最后发出去的RowKind也是和左表的一致
                         if (isLeftOuterJoin) {
                             collectJoinedRow(leftRow, rightNullRow);
                         }
@@ -270,6 +281,7 @@ public class TemporalRowTimeJoinOperator extends BaseTwoInputStreamOperatorWithS
                 });
         orderedLeftRecords.clear();
 
+        // 删除右表过期的数据
         cleanupExpiredVersionInState(currentWatermark, rightRowsSorted);
         return lastUnprocessedTime;
     }
@@ -286,6 +298,7 @@ public class TemporalRowTimeJoinOperator extends BaseTwoInputStreamOperatorWithS
     private void cleanupExpiredVersionInState(long currentWatermark, List<RowData> rightRowsSorted)
             throws Exception {
         int i = 0;
+        // 找到右表要删除的数据
         int indexToKeep = firstIndexToKeep(currentWatermark, rightRowsSorted);
         // clean old version data that behind current watermark
         while (i < indexToKeep) {
@@ -313,8 +326,10 @@ public class TemporalRowTimeJoinOperator extends BaseTwoInputStreamOperatorWithS
                 indexOfFirstElementNewerThanTimer(timerTimestamp, rightRowsSorted);
 
         if (firstIndexNewerThenTimer < 0) {
+            // 如果返回-1，意味着所有数据的时间戳都小于timerTimestamp，所以要保留所有数据
             return rightRowsSorted.size() - 1;
         } else {
+            // 如果返回3，意味着前三个数据的时间戳都小于timerTimestamp，所以要保留第四个数据
             return firstIndexNewerThenTimer - 1;
         }
     }

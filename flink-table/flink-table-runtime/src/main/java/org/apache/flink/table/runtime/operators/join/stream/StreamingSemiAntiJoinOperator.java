@@ -102,17 +102,25 @@ public class StreamingSemiAntiJoinOperator extends AbstractStreamingJoinOperator
     @Override
     public void processElement1(StreamRecord<RowData> element) throws Exception {
         RowData input = element.getValue();
+        // 这里会返回所有records,即使record一样，也要返回
         AssociatedRecords associatedRecords =
                 AssociatedRecords.of(input, true, rightRecordStateView, joinCondition);
         if (associatedRecords.isEmpty()) {
             if (isAntiJoin) {
+                // 没有join上数据，发出去(anti join)
                 collector.collect(input);
             }
+            // 如果没关联上，所以不需要发送数据(semi join)
         } else { // there are matched rows on the other side
             if (!isAntiJoin) {
+                // semi join
+                // 这里是不是可以优化一下，判断一下associatedRecords的大小，如果大于1，说明曾经join到过，不需要再发出去了
+                // 但是要做这个优化，必须要改一下right state结构，需要增加一下associated record nums
                 collector.collect(input);
             }
+            // 不是空，那么什么都不做(anti join)
         }
+        // 如果关联上了，不需要发送数据(anti join)
         if (RowDataUtil.isAccumulateMsg(input)) {
             // erase RowKind for state updating
             input.setRowKind(RowKind.INSERT);
@@ -120,6 +128,7 @@ public class StreamingSemiAntiJoinOperator extends AbstractStreamingJoinOperator
         } else { // input is retract
             // erase RowKind for state updating
             input.setRowKind(RowKind.INSERT);
+            // 将record出现的次数减一，如果出现的次数小于等于1了，那么就从state中remove，注意右表state不变化(semi join & anti join)
             leftRecordStateView.retractRecord(input);
         }
     }
@@ -166,6 +175,7 @@ public class StreamingSemiAntiJoinOperator extends AbstractStreamingJoinOperator
         RowKind inputRowKind = input.getRowKind();
         input.setRowKind(RowKind.INSERT); // erase RowKind for later state updating
 
+        // 这里会返回所有records,即使record一样，也要返回(semi & anti)
         AssociatedRecords associatedRecords =
                 AssociatedRecords.of(input, false, leftRecordStateView, joinCondition);
         if (isAccumulateMsg) { // record is accumulate
@@ -177,30 +187,43 @@ public class StreamingSemiAntiJoinOperator extends AbstractStreamingJoinOperator
                     if (outerRecord.numOfAssociations == 0) {
                         if (isAntiJoin) {
                             // send -D[other]
+                            // 如果之前associate是0，说明之前没有join上数据，所以发出去了，但是现在join上了，所以要撤回(anti join)
                             other.setRowKind(RowKind.DELETE);
                         } else {
                             // send +I/+U[other] (using input RowKind)
+                            // 如果以前没join上，现在join上了，需要发送数据(semi join)
                             other.setRowKind(inputRowKind);
                         }
                         collector.collect(other);
                         // set header back to INSERT, because we will update the other row to state
                         other.setRowKind(RowKind.INSERT);
                     } // ignore when number > 0
+                    // 如果以前已经join上了，现在join上了也不需要发送数据了，但是associate num要加一 (semi join & anti join)
+                    // 这种针对右表连续来了相同的记录,左表就不需要发送数据了，减少发送的数据量(semi join)
+                    // 如果以前join上了，现在也join上了，说明以前已经撤回过数据了，现在只需要将associate num要加一(anti join)
                     leftRecordStateView.updateNumOfAssociations(
                             other, outerRecord.numOfAssociations + 1);
                 }
-            } // ignore when associated number == 0
+            }
+            // ignore when associated number == 0
+            // 如果没有数据，对于semi join或者anti join都不需要处理
+            // 如果有数据只是没有关联上，那么对于semi join不需要做什么
+            // 对于anti join,在处理左表的时候，已经将数据发出了，这里也不需要做处理
         } else { // retract input
+            // 如果只有一条数据了，从state中remove
             rightRecordStateView.retractRecord(input);
             if (!associatedRecords.isEmpty()) {
                 // there are matched rows on the other side
                 for (OuterRecord outerRecord : associatedRecords.getOuterRecords()) {
                     RowData other = outerRecord.record;
+                    // 如果每条数据之前只关联上了一条数据(semi join & anti join)
                     if (outerRecord.numOfAssociations == 1) {
                         if (!isAntiJoin) {
+                            // 发送回撤数据 (semi join)
                             // send -D/-U[other] (using input RowKind)
                             other.setRowKind(inputRowKind);
                         } else {
+                            // 发送数据，因为之前每条数据只关联上一条 (anti join)
                             // send +I[other]
                             other.setRowKind(RowKind.INSERT);
                         }
@@ -208,6 +231,7 @@ public class StreamingSemiAntiJoinOperator extends AbstractStreamingJoinOperator
                         // set RowKind back, because we will update the other row to state
                         other.setRowKind(RowKind.INSERT);
                     } // ignore when number > 0
+                    // 如果每条数据关联上了不只一条数据，那么更新左表的associate num(semi join & anti join)
                     leftRecordStateView.updateNumOfAssociations(
                             other, outerRecord.numOfAssociations - 1);
                 }

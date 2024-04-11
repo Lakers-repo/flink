@@ -142,6 +142,7 @@ public abstract class BaseTwoInputStreamOperatorWithStateRetention
     @Override
     public final void onProcessingTime(InternalTimer<Object, VoidNamespace> timer)
             throws Exception {
+        // 设置了state TTL
         if (stateCleaningEnabled) {
             long timerTime = timer.getTimestamp();
             Long cleanupTime = latestRegisteredCleanupTimer.value();

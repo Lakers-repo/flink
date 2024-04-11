@@ -124,9 +124,11 @@ public class TemporalProcessTimeJoinOperator extends BaseTwoInputStreamOperatorW
     public void processElement2(StreamRecord<RowData> element) throws Exception {
         if (RowDataUtil.isAccumulateMsg(element.getValue())) {
             rightState.update(element.getValue());
+            // 右边有新的数据来，就更新timer时间，延长数据的保留时间
             registerProcessingCleanupTimer();
         } else {
             rightState.clear();
+            // 删除上一次的timer
             cleanupLastTimer();
         }
     }

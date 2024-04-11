@@ -17,12 +17,12 @@
  */
 package org.apache.flink.table.planner.runtime.stream.sql
 
+import org.apache.flink.table.api.ExplainDetail
 import org.apache.flink.table.planner.expressions.utils.TestNonDeterministicUdf
 import org.apache.flink.table.planner.factories.TestValuesTableFactory
 import org.apache.flink.table.planner.runtime.utils._
 import org.apache.flink.table.planner.runtime.utils.BatchTestBase.row
 import org.apache.flink.table.planner.runtime.utils.StreamingWithStateTestBase.StateBackendMode
-
 import org.assertj.core.api.Assertions
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -188,6 +188,12 @@ class TableSinkITCase(mode: StateBackendMode) extends StreamingWithStateTestBase
                       |  'sink-insert-only' = 'false'
                       |)
                       |""".stripMargin)
+    println(tEnv.explainSql(
+      s"""
+         |insert into sink_with_pk
+         |select user_id, SPLIT_INDEX(ndFunc(user_name), '-', 0), email, balance
+         |from users
+         |""".stripMargin))
 
     tEnv
       .executeSql(s"""
@@ -311,5 +317,24 @@ class TableSinkITCase(mode: StateBackendMode) extends StreamingWithStateTestBase
       .hasMessage("You should enable the checkpointing for sinking to managed table " +
         "'default_catalog.default_database.MyCtasTable'," +
         " managed table relies on checkpoint to commit and the data is visible only after commit.")
+  }
+
+  @Test
+  def test(): Unit = {
+    tEnv
+      .executeSql("""
+                    |CREATE TABLE sink_test
+                    |(person String, cnt BIGINT, PRIMARY KEY(person) NOT ENFORCED)
+                    | WITH (
+                    |   'connector' = 'values',
+                    |   'sink-insert-only' = 'false'
+                    |)
+                    |""".stripMargin)
+    val sub_query_test = "create view sub_query_test as select person, count(*) as cnt from src group by person"
+    val query_test = "insert into sink_test select * from sub_query_test where cnt <=1"
+    tEnv.executeSql(sub_query_test);
+//    tEnv.executeSql(sub_query_test);
+    val str = tEnv.explainSql(query_test, ExplainDetail.CHANGELOG_MODE)
+    println(str)
   }
 }

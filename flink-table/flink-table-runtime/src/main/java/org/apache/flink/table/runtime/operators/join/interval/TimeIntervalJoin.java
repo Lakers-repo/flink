@@ -153,6 +153,7 @@ abstract class TimeIntervalJoin extends KeyedCoProcessFunction<RowData, RowData,
         updateOperatorTime(ctx);
 
         long timeForLeftRow = getTimeForLeftStream(ctx, leftRow);
+        // 获取要查询的数据时间上下界（右表的）
         long rightQualifiedLowerBound = timeForLeftRow - rightRelativeSize;
         long rightQualifiedUpperBound = timeForLeftRow + leftRelativeSize;
         boolean emitted = false;
@@ -161,10 +162,12 @@ abstract class TimeIntervalJoin extends KeyedCoProcessFunction<RowData, RowData,
         // The condition here should be rightMinimumTime < rightQualifiedUpperBound.
         // We use rightExpirationTime as an approximation of the rightMinimumTime here,
         // since rightExpirationTime <= rightMinimumTime is always true.
+        // 上一次数据的过期时间是否大于你要查询数据的上界，如果大于，说明你查询的数据已经过期了
         if (rightExpirationTime < rightQualifiedUpperBound) {
             // Upper bound of current join window has not passed the cache expiration time yet.
             // There might be qualifying rows in the cache that the current row needs to be joined
             // with.
+            // 计算新的过期时间
             rightExpirationTime = calExpirationTime(leftOperatorTime, rightRelativeSize);
             // Join the leftRow with rows from the right cache.
             Iterator<Map.Entry<Long, List<Tuple2<RowData, Boolean>>>> rightIterator =
@@ -178,9 +181,12 @@ abstract class TimeIntervalJoin extends KeyedCoProcessFunction<RowData, RowData,
                     boolean entryUpdated = false;
                     for (Tuple2<RowData, Boolean> tuple : rightRows) {
                         joinCollector.reset();
+                        // 如果join上就发出去，并且设置joinCollector emitted为true (left table)
                         joinFunction.join(leftRow, tuple.f0, joinCollector);
+                        // 如果join上了，将emitted设为true
                         emitted = emitted || joinCollector.isEmitted();
                         if (joinType.isRightOuter()) {
+                            // 以前没join上，现在join上了，标记emitted为true(right table)
                             if (!tuple.f1 && joinCollector.isEmitted()) {
                                 // Mark the right row as being successfully joined and emitted.
                                 tuple.f1 = true;
@@ -194,6 +200,10 @@ abstract class TimeIntervalJoin extends KeyedCoProcessFunction<RowData, RowData,
                     }
                 }
                 // Clean up the expired right cache row, clean the cache while join
+                // 如果state里面，这条数据时间小于新的过期时间，那么这条数据即将被删除，如果是rightOuterJoin，那么这条数据需要被发出去
+                // 随着watermark的推进，timer会被触发，触发的时候会删除过期的数据
+                // 这里有一个问号，等于可以不加吗？
+                // 有一个好处就是防止一直来expire数据，导致state过大，不可预测
                 if (rightTime <= rightExpirationTime) {
                     if (joinType.isRightOuter()) {
                         List<Tuple2<RowData, Boolean>> rightRows = rightEntry.getValue();
@@ -213,7 +223,11 @@ abstract class TimeIntervalJoin extends KeyedCoProcessFunction<RowData, RowData,
             }
         }
         // Check if we need to cache the current row.
+        // rightExpirationTime < rightQualifiedUpperBound 如果这个为false
+        // rightOperatorTime < rightQualifiedUpperBound 这个一定为false
+        // 那么这条数据如果没有被关联上，必然会随着watermark推进被删除
         if (rightOperatorTime < rightQualifiedUpperBound) {
+            // 不管join没join上，都要写到cache里面
             // Operator time of right stream has not exceeded the upper window bound of the current
             // row. Put it into the left cache, since later coming records from the right stream are
             // expected to be joined with it.
@@ -229,6 +243,10 @@ abstract class TimeIntervalJoin extends KeyedCoProcessFunction<RowData, RowData,
             }
         } else if (!emitted && joinType.isLeftOuter()) {
             // Emit a null padding result if the left row is not cached and successfully joined.
+            // 随着watermark的推进，timer会触发，这条数据即将被删除
+            // 这里也有点疑问,为啥要发出去? 这里我觉得可以不发，让右边处理
+            // 缺点：但是有一个问题就是，如果不发出去就要保留在state里面，这样会导致state里面的数据越来越多
+            // 优点: 发出去了，state不会增加，但是有一个问题是，如果右边来了一条数据，和这条数据join上了，那么这会导致错误结果
             joinCollector.collect(paddingUtil.padLeft(leftRow));
         }
     }

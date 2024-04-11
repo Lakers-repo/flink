@@ -195,6 +195,8 @@ public class RetractableTopNFunction extends AbstractTopNFunction {
             }
 
             if (!stateRemoved) {
+                // A -> PK B -> OK
+                // +(A1, 50) +(A1, 100) +(A1, 100) +(A1, 200) -(A1, 50)
                 // the input record has not been removed from state
                 // should update the data state
                 List<RowData> inputs = dataState.get(sortKey);
@@ -313,8 +315,12 @@ public class RetractableTopNFunction extends AbstractTopNFunction {
                     long rankOfLastRecord = curRank + count;
                     // deletes the record if there is a record recently downgrades to Top-(N+1)
                     if (isInRankEnd(rankOfLastRecord)) {
+                        // A -> PK B -> OK
+                        // +(A1, 100) +(A1, 100) +(A1, 200)
                         curRank = rankOfLastRecord;
                     } else {
+                        // A -> PK B -> OK
+                        // +(A1, 100) +(A1, 100) +(A1, 100) +(A1, 200)
                         int index = Long.valueOf(rankEnd - curRank).intValue();
                         toDelete = inputs.get(index);
                         break;
@@ -439,6 +445,8 @@ public class RetractableTopNFunction extends AbstractTopNFunction {
                             inputIter.remove();
                         } else if (findsSortKey) {
                             if (nextRank == rankEnd) {
+                                // A -> PK B -> OK
+                                // +(A1, 100) +(A1, 100) +(A1, 100) +(A1, 200) -(A1, 100)
                                 collectInsert(out, prevRow, nextRank);
                             }
                         }
@@ -455,6 +463,8 @@ public class RetractableTopNFunction extends AbstractTopNFunction {
                 // gets the rank of last record with same sortKey
                 long rankOfLastRecord = nextRank + count - 1;
                 if (rankOfLastRecord < rankEnd) {
+                    // A -> PK B -> OK
+                    // +(A1, 50)  +(A1, 100) +(A1, 100) -(A1, 100)
                     nextRank = rankOfLastRecord + 1;
                 } else {
                     // sends the record if there is a record recently upgrades to Top-N
@@ -463,6 +473,8 @@ public class RetractableTopNFunction extends AbstractTopNFunction {
                     if (inputs == null) {
                         processStateStaled(iterator);
                     } else {
+                        // A -> PK B -> OK
+                        // +(A1, 50) +(A1, 50) +(A1, 100) +(A1, 100) -(A1, 100)
                         RowData toAdd = inputs.get(index);
                         collectInsert(out, toAdd);
                         break;
