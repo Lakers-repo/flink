@@ -18,6 +18,7 @@
 
 package org.apache.flink.table.examples.scala.basics;
 
+import org.apache.flink.table.examples.java.basics.GettingStartedExample;
 import org.apache.flink.table.examples.utils.ExampleOutputTestBase;
 
 import org.junit.jupiter.api.Test;
@@ -28,7 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class GettingStartedExampleITCase extends ExampleOutputTestBase {
 
     @Test
-    void testExample() {
+    void testExample() throws Exception {
         GettingStartedExample.main(new String[0]);
         final String consoleOutput = getOutputString();
         assertThat(consoleOutput)

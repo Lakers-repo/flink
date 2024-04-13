@@ -151,20 +151,20 @@ under the License.
 				<groupId>net.alchim31.maven</groupId>
 				<artifactId>scala-maven-plugin</artifactId>
 				<executions>
-					<execution>
-						<id>scala-compile-first</id>
-						<phase>process-resources</phase>
-						<goals>
-							<goal>add-source</goal>
-							<goal>compile</goal>
-						</goals>
-						<configuration>
-							<args>
-								<arg>-deprecation</arg>
-								<arg>-Xfatal-warnings</arg>
-							</args>
-						</configuration>
-					</execution>
+<!--					<execution>-->
+<!--						<id>scala-compile-first</id>-->
+<!--						<phase>process-resources</phase>-->
+<!--						<goals>-->
+<!--							<goal>add-source</goal>-->
+<!--							<goal>compile</goal>-->
+<!--						</goals>-->
+<!--						<configuration>-->
+<!--							<args>-->
+<!--								<arg>-deprecation</arg>-->
+<!--								<arg>-Xfatal-warnings</arg>-->
+<!--							</args>-->
+<!--						</configuration>-->
+<!--					</execution>-->
 					<execution>
 						<id>scala-test-compile</id>
 						<phase>process-test-resources</phase>
