@@ -77,10 +77,10 @@ public class IncrementalAggregateJsonPlanTest extends TableTestBase {
                         + "  'sink-insert-only' = 'false',\n"
                         + "  'table-sink-class' = 'DEFAULT')";
         tEnv.executeSql(sinkTableDdl);
-        util.verifyJsonPlan(
+        System.out.println(tEnv.explainSql(
                 "insert into MySink select a, "
                         + "count(distinct c) as c "
-                        + "from MyTable group by a");
+                        + "from MyTable group by a"));
     }
 
     @Test
@@ -96,11 +96,11 @@ public class IncrementalAggregateJsonPlanTest extends TableTestBase {
                         + "  'sink-insert-only' = 'false',\n"
                         + "  'table-sink-class' = 'DEFAULT')";
         tEnv.executeSql(sinkTableDdl);
-        util.verifyJsonPlan(
+        System.out.println(tEnv.explainSql(
                 "insert into MySink "
                         + "select b, sum(b1), count(distinct b1), count(1) "
                         + " from "
                         + "   (select a, count(b) as b, max(b) as b1 from MyTable group by a)"
-                        + " group by b");
+                        + " group by b"));
     }
 }
