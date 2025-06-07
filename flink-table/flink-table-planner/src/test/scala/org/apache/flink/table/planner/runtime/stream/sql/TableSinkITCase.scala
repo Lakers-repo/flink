@@ -23,6 +23,7 @@ import org.apache.flink.table.planner.factories.TestValuesTableFactory
 import org.apache.flink.table.planner.runtime.utils._
 import org.apache.flink.table.planner.runtime.utils.BatchTestBase.row
 import org.apache.flink.table.planner.runtime.utils.StreamingWithStateTestBase.StateBackendMode
+
 import org.assertj.core.api.Assertions
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -188,12 +189,12 @@ class TableSinkITCase(mode: StateBackendMode) extends StreamingWithStateTestBase
                       |  'sink-insert-only' = 'false'
                       |)
                       |""".stripMargin)
-    println(tEnv.explainSql(
-      s"""
-         |insert into sink_with_pk
-         |select user_id, SPLIT_INDEX(ndFunc(user_name), '-', 0), email, balance
-         |from users
-         |""".stripMargin))
+    println(
+      tEnv.explainSql(s"""
+                         |insert into sink_with_pk
+                         |select user_id, SPLIT_INDEX(ndFunc(user_name), '-', 0), email, balance
+                         |from users
+                         |""".stripMargin))
 
     tEnv
       .executeSql(s"""
@@ -330,7 +331,8 @@ class TableSinkITCase(mode: StateBackendMode) extends StreamingWithStateTestBase
                     |   'sink-insert-only' = 'false'
                     |)
                     |""".stripMargin)
-    val sub_query_test = "create view sub_query_test as select person, count(*) as cnt from src group by person"
+    val sub_query_test =
+      "create view sub_query_test as select person, count(*) as cnt from src group by person"
     val query_test = "insert into sink_test select * from sub_query_test where cnt <=1"
     tEnv.executeSql(sub_query_test);
 //    tEnv.executeSql(sub_query_test);

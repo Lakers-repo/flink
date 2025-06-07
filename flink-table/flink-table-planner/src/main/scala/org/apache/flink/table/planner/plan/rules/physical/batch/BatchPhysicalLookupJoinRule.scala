@@ -46,6 +46,7 @@ object BatchPhysicalLookupJoinRule {
         join: FlinkLogicalJoin,
         input: FlinkLogicalRel,
         temporalTable: RelOptTable,
+        enablePartitionedJoin: Boolean,
         calcProgram: Option[RexProgram]): CommonPhysicalLookupJoin = {
       doTransform(join, input, temporalTable, calcProgram)
     }
@@ -58,6 +59,7 @@ object BatchPhysicalLookupJoinRule {
         join: FlinkLogicalJoin,
         input: FlinkLogicalRel,
         temporalTable: RelOptTable,
+        enablePartitionedJoin: Boolean,
         calcProgram: Option[RexProgram]): CommonPhysicalLookupJoin = {
       doTransform(join, input, temporalTable, calcProgram)
     }

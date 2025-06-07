@@ -40,6 +40,7 @@ import java.io.IOException;
 public class StreamWindowSQLProcessTimeExample {
     private static final Logger logger = LoggerFactory.getLogger(StreamWindowSQLProcessTimeExample.class);
 
+    // TODO: processing time window not support the two-phase.
     public static void main(String[] args) throws Exception {
         // set up execution environment
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();

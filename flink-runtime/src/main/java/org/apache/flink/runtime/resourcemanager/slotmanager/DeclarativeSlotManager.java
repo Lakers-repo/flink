@@ -303,6 +303,7 @@ public class DeclarativeSlotManager implements SlotManager {
         }
         resourceTracker.notifyResourceRequirements(
                 resourceRequirements.getJobId(), resourceRequirements.getResourceRequirements());
+        // 这里是重点，是所有处理资源申请的入口
         checkResourceRequirementsWithDelay();
     }
 
@@ -449,11 +450,13 @@ public class DeclarativeSlotManager implements SlotManager {
      * are performed with a slight delay.
      */
     private void checkResourceRequirementsWithDelay() {
+        // 默认是50ms -> ResourceManagerOptions.REQUIREMENTS_CHECK_DELAY
         if (requirementsCheckDelay.toMillis() <= 0) {
             checkResourceRequirements();
         } else {
             if (requirementsCheckFuture == null || requirementsCheckFuture.isDone()) {
                 requirementsCheckFuture = new CompletableFuture<>();
+                // 定时去看job是否有没有分配到资源，并且分配资源
                 scheduledExecutor.schedule(
                         () ->
                                 mainThreadExecutor.execute(
@@ -498,6 +501,7 @@ public class DeclarativeSlotManager implements SlotManager {
      * instead.
      */
     private void checkResourceRequirements() {
+        // 拿到所有之前没有分配到的资源
         final Map<JobID, Collection<ResourceRequirement>> missingResources =
                 resourceTracker.getMissingResources();
         if (missingResources.isEmpty()) {
@@ -509,6 +513,7 @@ public class DeclarativeSlotManager implements SlotManager {
                 missingResources.entrySet()) {
             final JobID jobId = resourceRequirements.getKey();
 
+            // 尝试分配slot给之前没有分配到资源的job
             final ResourceCounter unfulfilledJobRequirements =
                     tryAllocateSlotsForJob(jobId, resourceRequirements.getValue());
             if (!unfulfilledJobRequirements.isEmpty()) {
@@ -519,6 +524,8 @@ public class DeclarativeSlotManager implements SlotManager {
             return;
         }
 
+        // pendingSlot
+        // 代表还没有分配task的slot - 新申请的slot
         ResourceCounter pendingSlots =
                 ResourceCounter.withResources(
                         taskExecutorManager.getPendingTaskManagerSlots().stream()
@@ -530,6 +537,7 @@ public class DeclarativeSlotManager implements SlotManager {
         for (Map.Entry<JobID, ResourceCounter> unfulfilledRequirement :
                 unfulfilledRequirements.entrySet()) {
             pendingSlots =
+                    // 尝试用pending slots去分配资源
                     tryFulfillRequirementsWithPendingSlots(
                             unfulfilledRequirement.getKey(),
                             unfulfilledRequirement.getValue().getResourcesWithCount(),
@@ -578,11 +586,13 @@ public class DeclarativeSlotManager implements SlotManager {
         for (int x = 0; x < resourceRequirement.getNumberOfRequiredSlots(); x++) {
 
             final Optional<TaskManagerSlotInformation> reservedSlot =
+                    // 找到匹配的slot
                     slotMatchingStrategy.findMatchingSlot(
                             requiredResource,
                             availableSlots.values(),
                             this::getNumberRegisteredSlotsOf);
             if (reservedSlot.isPresent()) {
+                // 真正去分配slot
                 allocateSlot(reservedSlot.get(), jobId, targetAddress, requiredResource);
                 availableSlots.remove(reservedSlot.get().getSlotId());
             } else {
@@ -633,6 +643,7 @@ public class DeclarativeSlotManager implements SlotManager {
 
         final AllocationID allocationId = new AllocationID();
 
+        // 开始分配,这里会把slot的状态变成pending
         slotTracker.notifyAllocationStart(slotId, jobId);
         taskExecutorManager.markUsed(instanceId);
         pendingSlotAllocations.put(slotId, allocationId);
@@ -707,14 +718,19 @@ public class DeclarativeSlotManager implements SlotManager {
             JobID jobId,
             Collection<Map.Entry<ResourceProfile, Integer>> missingResources,
             ResourceCounter pendingSlots) {
+        // 比如说这里有missingResource是<r1,1>, <r2,1>
         for (Map.Entry<ResourceProfile, Integer> missingResource : missingResources) {
             ResourceProfile profile = missingResource.getKey();
+            // 这里第一个是r1,1，第二个是r2,1
             for (int i = 0; i < missingResource.getValue(); i++) {
+                // 尝试为r1,1 分配资源
                 final MatchingResult matchingResult =
                         tryFulfillWithPendingSlots(profile, pendingSlots);
                 pendingSlots = matchingResult.getNewAvailableResources();
+                // 如果没有匹配上，尝试申请新的TM
                 if (!matchingResult.isSuccessfulMatching()) {
                     final WorkerAllocationResult allocationResult =
+                            // 申请新的TM
                             tryAllocateWorkerAndReserveSlot(profile, pendingSlots);
                     pendingSlots = allocationResult.getNewAvailableResources();
                     if (!allocationResult.isSuccessfulAllocating()
@@ -755,11 +771,13 @@ public class DeclarativeSlotManager implements SlotManager {
 
     private WorkerAllocationResult tryAllocateWorkerAndReserveSlot(
             ResourceProfile profile, ResourceCounter pendingSlots) {
+        // 新申请的resources
         Optional<ResourceRequirement> newlyFulfillableRequirements =
                 taskExecutorManager.allocateWorker(profile);
         if (newlyFulfillableRequirements.isPresent()) {
             ResourceRequirement newSlots = newlyFulfillableRequirements.get();
             // reserve one of the new slots
+            // 如果新申请的slots大于1，那么就保留一个，因为后面还要分配一个slot给这个job，这个job指的是当前这次循环的job
             if (newSlots.getNumberOfRequiredSlots() > 1) {
                 pendingSlots =
                         pendingSlots.add(

@@ -177,6 +177,7 @@ public class DefaultSlotTracker implements SlotTracker {
         Preconditions.checkState(slot.getState() == SlotState.FREE);
 
         slot.startAllocation(jobId);
+        // free slot 减一个
         freeSlots.remove(slot.getSlotId());
         slotStatusUpdateListeners.notifySlotStatusChange(
                 slot, SlotState.FREE, SlotState.PENDING, jobId);

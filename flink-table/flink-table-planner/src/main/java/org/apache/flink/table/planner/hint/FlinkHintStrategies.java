@@ -94,6 +94,17 @@ public abstract class FlinkHintStrategies {
                                                 HintPredicates.CORRELATE, HintPredicates.JOIN))
                                 .optionChecker(LOOKUP_NON_EMPTY_KV_OPTION_CHECKER)
                                 .build())
+                .hintStrategy(
+                        FlinkHints.HINT_NAME_PARTITIONED_JOIN,
+                        HintStrategy.builder(HintPredicates.TABLE_SCAN)
+                                .optionChecker(
+                                        (hint, errorHandler) ->
+                                                errorHandler.check(
+                                                        hint.kvOptions.isEmpty()
+                                                                && hint.listOptions.isEmpty(),
+                                                        "Hint [{}] does not require any options",
+                                                        hint.hintName))
+                                .build())
                 .build();
     }
 

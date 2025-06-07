@@ -18,6 +18,7 @@
 
 package org.apache.flink.table.examples.java.basics;
 
+import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.ExplainDetail;
@@ -49,11 +50,17 @@ public final class StreamSQLExample {
 
     public static void main(String[] args) throws Exception {
 
+        Configuration conf = new Configuration();
+        //conf.setString(RestOptions.BIND_PORT,"8081-8089");
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.createLocalEnvironmentWithWebUI(conf);
+
         // set up the Java DataStream API
-        final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+//        final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
         // set up the Java Table API
         final StreamTableEnvironment tableEnv = StreamTableEnvironment.create(env);
+        env.setParallelism(1);
+        env.setMaxParallelism(1);
 
 //        final DataStream<Order> orderA =
 //                env.fromCollection(
@@ -105,10 +112,24 @@ public final class StreamSQLExample {
                 + "  'fields.price.max' = '1000000'\n"
                 + ")";
 
-        String sinkSql = "CREATE TABLE sink_table (\n"
+        String sinkSql1 = "CREATE TABLE sink_table1 (\n"
                 + "    order_id STRING,\n"
-                + "    user_id STRING,\n"
-                + "    row_num BIGINT\n"
+//                + "    user_id STRING,\n"
+                + "    amount BIGINT\n"
+//                + "ts timestamp(3)\n"
+//                + "    sum_result BIGINT,\n"
+//                + "    avg_result DOUBLE,\n"
+//                + "    min_result BIGINT,\n"
+//                + "    max_result BIGINT\n"
+                + ") WITH (\n"
+                + "  'connector' = 'print'\n"
+                + ")";
+
+        String sinkSql2 = "CREATE TABLE sink_table2 (\n"
+                + "    order_id STRING,\n"
+//                + "    user_id STRING,\n"
+                + "    amount BIGINT\n"
+//                + "ts timestamp(3)\n"
 //                + "    sum_result BIGINT,\n"
 //                + "    avg_result DOUBLE,\n"
 //                + "    min_result BIGINT,\n"
@@ -118,25 +139,24 @@ public final class StreamSQLExample {
                 + ")";
 
 
-
-//        String middle = "create view mid_count as\n"
-//                + "select order_id,\n"
-//                + "       count(*) as count_result\n"
-////                + "       sum(price) as sum_result,\n"
-////                + "       avg(price) as avg_result,\n"
-////                + "       min(price) as min_result,\n"
-////                + "       max(price) as max_result\n"
-//                + "from source_table\n"
-//                + "group by order_id";
-
-        String selectWhereSql = "insert into sink_table \n"
-                + "select order_id, count(*) as count_result\n"
+        String middle = "create view mid_count as\n"
+                + "select order_id,\n"
+                + "       count(*) as amount\n"
 //                + "       sum(price) as sum_result,\n"
 //                + "       avg(price) as avg_result,\n"
 //                + "       min(price) as min_result,\n"
 //                + "       max(price) as max_result\n"
-                + "from (select order_id, user_id from (select order_id, user_id, ROW_NUMBER() OVER (PARTITION BY order_id ORDER BY proctime DESC) as row_num from source_table) where row_num = 1"
-                + ") group by order_id";
+                + "from source_table\n"
+                + "group by order_id";
+
+//        String selectWhereSql = "insert into sink_table \n"
+//                + "select order_id, count(*) as count_result\n"
+//                + "       sum(price) as sum_result,\n"
+//                + "       avg(price) as avg_result,\n"
+//                + "       min(price) as min_result,\n"
+//                + "       max(price) as max_result\n"
+//                + "from (select order_id, user_id from (select order_id, user_id, ROW_NUMBER() OVER (PARTITION BY order_id ORDER BY proctime DESC) as row_num from source_table) where row_num = 1"
+//                + ") group by order_id";
 
 //        String query = "select order_id, user_id from (select order_id, user_id, ROW_NUMBER() OVER (PARTITION BY order_id ORDER BY user_id DESC) as row_num from source_table) where row_num >= 1 and row_num <=3";
 //        String query = "insert into sink_table select order_id, cnt as count_result from (select order_id, count(*) as cnt from source_table group by order_id) where cnt <= 3";
@@ -150,15 +170,20 @@ public final class StreamSQLExample {
 ////                + "       min(price) as min_result,\n"
 ////                + "       max(price) as max_result\n"
 ////                + "where count_result > 1";
-//        String query = "select user_id, count(*) from (select user_id, sum(price) from source_table group by user_id) tmp group by user_id";
-        String query = "select tmp.user_id, sum(tmp.price1) from (select user_id, order_id, sum(price) as price1 from source_table group by user_id, order_id) tmp group by user_id";
+//        String query = "insert into sink_table select order_id, user_id, sum(price) as amount from source_table group by order_id, user_id";
+//        String query = "insert into sink_table select CURRENT_TIMESTAMP from source_table";
+//        String query = "select tmp.user_id, sum(tmp.price1) from (select user_id, order_id, sum(price) as price1 from source_table group by user_id, order_id) tmp group by user_id";
+        String query1 = "insert into sink_table1 select order_id, amount from mid_count";
+        String query2 = "insert into sink_table2 select order_id, amount from mid_count";
 
 
         tableEnv.executeSql(sourceSql);
-//        tableEnv.executeSql(sinkSql);
-//        tableEnv.executeSql(middle);
-//        tableEnv.executeSql(query);
-        System.out.println(tableEnv.explainSql(query, ExplainDetail.CHANGELOG_MODE));
+        tableEnv.executeSql(sinkSql1);
+        tableEnv.executeSql(sinkSql2);
+        tableEnv.executeSql(middle);
+        tableEnv.executeSql(query1);
+        tableEnv.executeSql(query2);
+//        System.out.println(tableEnv.explainSql(query, ExplainDetail.CHANGELOG_MODE));
 //        System.out.println(tableEnv.explainSql(query));
     }
 
@@ -173,7 +198,8 @@ public final class StreamSQLExample {
         public int amount;
 
         // for POJO detection in DataStream API
-        public Order() {}
+        public Order() {
+        }
 
         // for structured type detection in Table API
         public Order(Long user, String product, int amount) {

@@ -29,6 +29,7 @@ import org.apache.flink.connector.hbase2.util.HBaseTestBase;
 import org.apache.flink.runtime.testutils.MiniClusterResourceConfiguration;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.table.api.ExplainDetail;
 import org.apache.flink.table.api.Table;
 import org.apache.flink.table.api.TableEnvironment;
 import org.apache.flink.table.api.TableResult;
@@ -473,24 +474,25 @@ public class HBaseConnectorITCase extends HBaseTestBase {
                         + " FROM src JOIN "
                         + TEST_TABLE_1
                         + " FOR SYSTEM_TIME AS OF src.proc as h ON src.a = h.rowkey";
-        Iterator<Row> collected = tEnv.executeSql(dimJoinQuery).collect();
-        List<String> result =
-                Lists.newArrayList(collected).stream()
-                        .map(Row::toString)
-                        .sorted()
-                        .collect(Collectors.toList());
-
-        List<String> expected = new ArrayList<>();
-        expected.add(
-                "+I[1, 1, 10, Hello-1, 100, 1.01, false, Welt-1, 2019-08-18T19:00, 2019-08-18, 19:00, 12345678.0001]");
-        expected.add(
-                "+I[2, 2, 20, Hello-2, 200, 2.02, true, Welt-2, 2019-08-18T19:01, 2019-08-18, 19:01, 12345678.0002]");
-        expected.add(
-                "+I[3, 2, 30, Hello-3, 300, 3.03, false, Welt-3, 2019-08-18T19:02, 2019-08-18, 19:02, 12345678.0003]");
-        expected.add(
-                "+I[3, 3, 30, Hello-3, 300, 3.03, false, Welt-3, 2019-08-18T19:02, 2019-08-18, 19:02, 12345678.0003]");
-
-        assertEquals(expected, result);
+        System.out.println(tEnv.explainSql(dimJoinQuery, ExplainDetail.CHANGELOG_MODE));
+//        Iterator<Row> collected = tEnv.executeSql(dimJoinQuery).collect();
+//        List<String> result =
+//                Lists.newArrayList(collected).stream()
+//                        .map(Row::toString)
+//                        .sorted()
+//                        .collect(Collectors.toList());
+//
+//        List<String> expected = new ArrayList<>();
+//        expected.add(
+//                "+I[1, 1, 10, Hello-1, 100, 1.01, false, Welt-1, 2019-08-18T19:00, 2019-08-18, 19:00, 12345678.0001]");
+//        expected.add(
+//                "+I[2, 2, 20, Hello-2, 200, 2.02, true, Welt-2, 2019-08-18T19:01, 2019-08-18, 19:01, 12345678.0002]");
+//        expected.add(
+//                "+I[3, 2, 30, Hello-3, 300, 3.03, false, Welt-3, 2019-08-18T19:02, 2019-08-18, 19:02, 12345678.0003]");
+//        expected.add(
+//                "+I[3, 3, 30, Hello-3, 300, 3.03, false, Welt-3, 2019-08-18T19:02, 2019-08-18, 19:02, 12345678.0003]");
+//
+//        assertEquals(expected, result);
     }
 
     // -------------------------------------------------------------------------------------

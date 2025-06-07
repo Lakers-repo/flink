@@ -85,9 +85,9 @@ public class JoinJsonPlanTest extends TableTestBase {
                         + "  'connector' = 'values',\n"
                         + "  'table-sink-class' = 'DEFAULT')";
         tEnv.executeSql(sinkTableDdl);
-        System.out.println(tEnv.explainSql(
-                "INSERT INTO MySink SELECT a1, b1 FROM A JOIN B ON a1 = b1"));
-//        util.verifyJsonPlan("INSERT INTO MySink SELECT a1, b1 FROM A JOIN B ON a1 = b1");
+        System.out.println(
+                tEnv.explainSql("INSERT INTO MySink SELECT a1, b1 FROM A JOIN B ON a1 = b1"));
+        //        util.verifyJsonPlan("INSERT INTO MySink SELECT a1, b1 FROM A JOIN B ON a1 = b1");
     }
 
     @Test
@@ -106,17 +106,17 @@ public class JoinJsonPlanTest extends TableTestBase {
                         + "  'table-sink-class' = 'DEFAULT')";
         tEnv.executeSql(sinkTableDdl);
         System.out.println(tEnv.explainSql(String.format("INSERT INTO MySink %s", query)));
-//        util.verifyJsonPlan(String.format("INSERT INTO MySink %s", query));
+        //        util.verifyJsonPlan(String.format("INSERT INTO MySink %s", query));
     }
 
     @Test
     public void testInnerJoinWithPk() {
-//        String query1 = "SELECT SUM(a2) AS a2, a1 FROM A GROUP BY a1";
-//        String query2 = "SELECT SUM(b2) AS b2, b1 FROM B GROUP BY b1";
+        //        String query1 = "SELECT SUM(a2) AS a2, a1 FROM A GROUP BY a1";
+        //        String query2 = "SELECT SUM(b2) AS b2, b1 FROM B GROUP BY b1";
         String query1 = "create view view1 as SELECT COUNT(*) AS cnt1, a, b FROM A GROUP BY a,b";
         String query2 = "create view view2 as SELECT COUNT(*) AS cnt2, a, b FROM B GROUP BY a,b";
         String query =
-                        "SELECT view1.a, view2.a, view1.b, view2.b FROM view1 JOIN view2 ON view1.a = view2.a";
+                "SELECT view1.a, view2.a, view1.b, view2.b FROM view1 JOIN view2 ON view1.a = view2.a";
         String sinkTableDdl =
                 "CREATE TABLE MySink (\n"
                         + "  a1 int,\n"
@@ -129,10 +129,11 @@ public class JoinJsonPlanTest extends TableTestBase {
                         + "  'table-sink-class' = 'DEFAULT')";
         tEnv.executeSql(query1);
         tEnv.executeSql(query2);
-//        tEnv.executeSql(sinkTableDdl);
-//        System.out.println(tEnv.explainSql(String.format("INSERT INTO MySink %s", query)));
+        //        tEnv.executeSql(sinkTableDdl);
+        //        System.out.println(tEnv.explainSql(String.format("INSERT INTO MySink %s",
+        // query)));
         System.out.println(tEnv.explainSql(query));
-//        util.verifyJsonPlan(String.format("INSERT INTO MySink %s", query));
+        //        util.verifyJsonPlan(String.format("INSERT INTO MySink %s", query));
     }
 
     @Test

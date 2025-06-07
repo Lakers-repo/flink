@@ -49,17 +49,21 @@ class JobScopedResourceTracker {
 
     private final RequirementMatcher requirementMatcher = new DefaultRequirementMatcher();
 
+    // 需要的总资源
     private ResourceCounter resourceRequirements = ResourceCounter.empty();
+    // 超过的资源数量
     private ResourceCounter excessResources = ResourceCounter.empty();
 
     JobScopedResourceTracker(JobID jobId) {
         this.jobId = Preconditions.checkNotNull(jobId);
     }
 
+    // 申请资源
     public void notifyResourceRequirements(
             Collection<ResourceRequirement> newResourceRequirements) {
         Preconditions.checkNotNull(newResourceRequirements);
 
+        // 每次获取新的资源前，清空之前的资源数量
         resourceRequirements = ResourceCounter.empty();
         for (ResourceRequirement newResourceRequirement : newResourceRequirements) {
             resourceRequirements =
@@ -71,11 +75,13 @@ class JobScopedResourceTracker {
         tryAssigningExcessSlots();
     }
 
+    // 获取到资源
     public void notifyAcquiredResource(ResourceProfile resourceProfile) {
         Preconditions.checkNotNull(resourceProfile);
         final Optional<ResourceProfile> matchingRequirement =
                 findMatchingRequirement(resourceProfile);
         if (matchingRequirement.isPresent()) {
+            // 更新job已分配的资源
             resourceToRequirementMapping.incrementCount(
                     matchingRequirement.get(), resourceProfile, 1);
         } else {
@@ -183,6 +189,7 @@ class JobScopedResourceTracker {
             if (numTotalAcquiredResources > numTotalRequiredResources) {
                 int numExcessResources = numTotalAcquiredResources - numTotalRequiredResources;
 
+                // 循环遍历所有已分配的资源，计算超出的资源数
                 for (Map.Entry<ResourceProfile, Integer> acquiredResource :
                         resourceToRequirementMapping
                                 .getResourcesFulfilling(requirementProfile)
@@ -210,6 +217,7 @@ class JobScopedResourceTracker {
             }
         }
 
+        // 释放多余的资源
         if (!excessResources.isEmpty()) {
             LOG.debug("Detected excess resources for job {}: {}", jobId, excessResources);
             for (ExcessResource excessResource : excessResources) {

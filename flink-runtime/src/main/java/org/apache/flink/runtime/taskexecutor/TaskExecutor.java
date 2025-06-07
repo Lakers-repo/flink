@@ -1391,6 +1391,11 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
             InstanceID taskExecutorRegistrationId,
             ClusterInformation clusterInformation) {
 
+        // print the slot info
+        SlotReport slotReport = taskSlotTable.createSlotReport(getResourceID());
+        log.info("slot info===========" + slotReport.toString());
+
+        // 发送slot report
         final CompletableFuture<Acknowledge> slotReportResponseFuture =
                 resourceManagerGateway.sendSlotReport(
                         getResourceID(),
@@ -2348,6 +2353,7 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
                         //noinspection ObjectEquality
                         if (resourceManagerConnection == connection) {
                             try {
+                                // tm 启动后，会向RM发送slot信息
                                 establishResourceManagerConnection(
                                         resourceManagerGateway,
                                         resourceManagerId,

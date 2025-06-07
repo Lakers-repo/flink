@@ -227,6 +227,7 @@ public class DefaultExecutionTopology implements SchedulingTopology {
                 IterableUtils.toStream(newExecutionVertices)
                         .map(ExecutionVertex::getID)
                         .collect(Collectors.toList());
+        LOG.info("============testing====================");
         for (SchedulingTopologyListener listener : schedulingTopologyListeners) {
             listener.notifySchedulingTopologyUpdated(this, newVertexIds);
         }

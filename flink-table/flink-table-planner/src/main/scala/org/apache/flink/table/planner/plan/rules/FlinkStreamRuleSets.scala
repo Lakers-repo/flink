@@ -336,11 +336,16 @@ object FlinkStreamRuleSets {
         LOGICAL_CONVERTERS.asScala
     ).asJava)
 
+  val CALC_BEFORE_LOGICAL_REWRITE: RuleSet = RuleSets.ofList(
+    FlinkCalcMergeRule.INSTANCE
+  )
+
   /** RuleSet to do rewrite on FlinkLogicalRel for Stream */
   val LOGICAL_REWRITE: RuleSet = RuleSets.ofList(
     // watermark push down
     PushWatermarkIntoTableSourceScanAcrossCalcRule.INSTANCE,
     PushWatermarkIntoTableSourceScanRule.INSTANCE,
+    FlinkCalcMergeRule.INSTANCE,
     // transform over window to topn node
     FlinkLogicalRankRule.INSTANCE,
     // transpose calc past rank to reduce rank input fields

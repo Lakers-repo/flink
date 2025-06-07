@@ -492,6 +492,7 @@ public abstract class ResourceManager<WorkerType extends ResourceIDRetrievable>
                 taskExecutors.get(taskManagerResourceId);
 
         if (workerTypeWorkerRegistration.getInstanceID().equals(taskManagerRegistrationId)) {
+            // 注册slot到slot manager
             if (slotManager.registerTaskManager(
                     workerTypeWorkerRegistration,
                     slotReport,

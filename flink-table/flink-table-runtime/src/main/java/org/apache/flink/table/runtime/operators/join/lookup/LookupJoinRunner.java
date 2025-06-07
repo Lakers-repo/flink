@@ -43,6 +43,8 @@ public class LookupJoinRunner extends ProcessFunction<RowData, RowData> {
     protected transient ListenableCollector<RowData> collector;
     protected transient JoinedRowData outRow;
     private transient GenericRowData nullRow;
+    // 实现batch lookup
+    //    private ProcessingTimeService processingTimeService;
 
     public LookupJoinRunner(
             GeneratedFunction<FlatMapFunction<RowData, RowData>> generatedFetcher,
@@ -69,6 +71,7 @@ public class LookupJoinRunner extends ProcessFunction<RowData, RowData> {
 
         this.nullRow = new GenericRowData(tableFieldsCount);
         this.outRow = new JoinedRowData();
+        //        processingTimeService.registerTimer()
     }
 
     @Override

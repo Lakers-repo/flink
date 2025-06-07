@@ -33,6 +33,12 @@ import static org.apache.flink.configuration.ConfigOptions.key;
 @PublicEvolving
 public class OptimizerConfigOptions {
 
+    @Documentation.TableOption(execMode = Documentation.ExecMode.STREAMING)
+    public static final ConfigOption<Boolean> TABLE_EXEC_MERGE_CALC =
+            key("table.exec.merge.calc")
+                    .defaultValue(false)
+                    .withDescription(
+                            "merge calc before whole logic rewrite to enable rank create correctly");
     // ------------------------------------------------------------------------
     //  Optimizer Options
     // ------------------------------------------------------------------------

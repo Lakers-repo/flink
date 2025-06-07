@@ -29,8 +29,10 @@ import org.apache.flink.runtime.scheduler.strategy.ConsumedPartitionGroup;
 import org.apache.flink.runtime.scheduler.strategy.ExecutionVertexID;
 import org.apache.flink.runtime.scheduler.strategy.SchedulingExecutionVertex;
 import org.apache.flink.runtime.scheduler.strategy.SchedulingTopology;
+import org.apache.flink.util.Preconditions;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
@@ -40,7 +42,9 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.apache.flink.util.Preconditions.checkNotNull;
 import static org.apache.flink.util.Preconditions.checkState;
@@ -229,6 +233,15 @@ class LocalInputPreferredSlotSharingStrategy
 
                 updateConstraintToExecutionSlotSharingGroupMap(executionVertices);
             }
+//            // 2.尝试最优的分配
+//            final List<SchedulingExecutionVertex> remaining =
+//                    tryFindOptimalAvailableExecutionSlotSharingGroupFor(nonAvailable);
+//
+//            // 3.从可用的group里分配、或者创建一个新的group分配
+//            findAvailableOrCreateNewExecutionSlotSharingGroupFor(remaining);
+//
+//            updateConstraintToExecutionSlotSharingGroupMap(executionVertices);
+
 
             return executionSlotSharingGroupMap;
         }
@@ -287,6 +300,42 @@ class LocalInputPreferredSlotSharingStrategy
             }
         }
 
+//        private ExecutionSlotSharingGroup tryFindAvailableProducerExecutionSlotSharingGroupFor(
+//                final SchedulingExecutionVertex executionVertex) {
+//
+//            final ExecutionVertexID executionVertexId = executionVertex.getId();
+//            // 由于遍历所有的ConsumedPartitionGroups,把每个ExecutionSlotSharingGroup分组都拿出来
+//            Set<ExecutionSlotSharingGroup> candidateGroups =
+//                    executionVertex.getConsumedPartitionGroups().stream()
+//                            .flatMap(
+//                                    consumedPartitionGroup ->
+//                                            candidateGroupsForConsumedPartitionGroup
+//                                                    .computeIfAbsent(
+//                                                            consumedPartitionGroup,
+//                                                            group ->
+//                                                                    computeAllCandidateGroupsForConsumedPartitionGroup(
+//                                                                            executionVertexId
+//                                                                                    .getJobVertexId(),
+//                                                                            group))
+//                                                    .stream())
+//                            .collect(Collectors.toSet());
+//
+//            LinkedHashSet<ExecutionSlotSharingGroup> executionSlotSharingGroups =
+//                    availableGroupsForJobVertex.get(executionVertexId.getJobVertexId());
+//            if (null != executionSlotSharingGroups) {
+//                Optional<ExecutionSlotSharingGroup> candidateGroupOptional =
+//                        candidateGroups.stream()
+//                                .filter(executionSlotSharingGroups::contains)
+//                                .min(
+//                                        Comparator.comparingInt(
+//                                                o -> o.getExecutionVertexIds().size()));
+//                if (candidateGroupOptional.isPresent()) {
+//                    return candidateGroupOptional.get();
+//                }
+//            }
+//            return null;
+//        }
+
         private ExecutionSlotSharingGroup tryFindAvailableProducerExecutionSlotSharingGroupFor(
                 final SchedulingExecutionVertex executionVertex) {
 
@@ -325,6 +374,42 @@ class LocalInputPreferredSlotSharingStrategy
 
             return null;
         }
+
+//        private ExecutionSlotSharingGroup tryFindAvailableProducerExecutionSlotSharingGroupFor(
+//                final SchedulingExecutionVertex executionVertex) {
+//
+//            final ExecutionVertexID executionVertexId = executionVertex.getId();
+//            // 由于遍历所有的ConsumedPartitionGroups,把每个ExecutionSlotSharingGroup分组都拿出来
+//            Set<ExecutionSlotSharingGroup> candidateGroups =
+//                    executionVertex.getConsumedPartitionGroups().stream()
+//                            .flatMap(
+//                                    consumedPartitionGroup ->
+//                                            candidateGroupsForConsumedPartitionGroup
+//                                                    .computeIfAbsent(
+//                                                            consumedPartitionGroup,
+//                                                            group ->
+//                                                                    computeAllCandidateGroupsForConsumedPartitionGroup(
+//                                                                            executionVertexId
+//                                                                                    .getJobVertexId(),
+//                                                                            group))
+//                                                    .stream())
+//                            .collect(Collectors.toSet());
+//
+//            LinkedHashSet<ExecutionSlotSharingGroup> executionSlotSharingGroups =
+//                    availableGroupsForJobVertex.get(executionVertexId.getJobVertexId());
+//            if (null != executionSlotSharingGroups) {
+//                Optional<ExecutionSlotSharingGroup> candidateGroupOptional =
+//                        candidateGroups.stream()
+//                                .filter(executionSlotSharingGroups::contains)
+//                                .min(
+//                                        Comparator.comparingInt(
+//                                                o -> o.getExecutionVertexIds().size()));
+//                if (candidateGroupOptional.isPresent()) {
+//                    return candidateGroupOptional.get();
+//                }
+//            }
+//            return null;
+//        }
 
         private boolean isExecutionSlotSharingGroupAvailableForVertex(
                 ExecutionSlotSharingGroup executionSlotSharingGroup, ExecutionVertexID vertexId) {
@@ -379,6 +464,25 @@ class LocalInputPreferredSlotSharingStrategy
                 addVertexToExecutionSlotSharingGroup(executionVertex, group);
             }
         }
+//        private void findAvailableOrCreateNewExecutionSlotSharingGroupFor(
+//                final List<SchedulingExecutionVertex> executionVertices) {
+//
+//            for (SchedulingExecutionVertex executionVertex : executionVertices) {
+//
+//                // 1.从可用的池子里找group
+//                ExecutionSlotSharingGroup group = tryFindAvailableExecutionSlotSharingGroupFor(executionVertex);
+//
+//                if (null != jobResourceInformation) {
+//                    //高级资源模式一定会找到空闲的group
+//                    Preconditions.checkNotNull(group);
+//                }
+//                if (group == null) {
+//                    // 2.创建一个新的group
+//                    group = createNewExecutionSlotSharingGroup(executionVertex.getId());
+//                }
+//                addVertexToExecutionSlotSharingGroup(executionVertex, group);
+//            }
+//        }
 
         private ExecutionSlotSharingGroup tryFindAvailableExecutionSlotSharingGroupFor(
                 SchedulingExecutionVertex executionVertex) {

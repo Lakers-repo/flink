@@ -34,6 +34,14 @@ public class DefaultRequirementMatcher implements RequirementMatcher {
             ResourceProfile resourceProfile,
             ResourceCounter totalRequirements,
             Function<ResourceProfile, Integer> numAssignedResourcesLookup) {
+        /*
+            public int getNumFulfillingResources(ResourceProfile requirement) {
+        Preconditions.checkNotNull(requirement);
+        return requirementToFulfillingResources
+                .getOrDefault(requirement, ResourceCounter.empty())
+                .getTotalResourceCount();
+    }
+         */
         // Short-cut for fine-grained resource management. If there is already exactly equal
         // requirement, we can directly match with it.
         if (totalRequirements.getResourceCount(resourceProfile)

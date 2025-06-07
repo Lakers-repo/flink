@@ -34,7 +34,8 @@ import java.util.function.Consumer;
 /** A {@link KeyedCoProcessOperator} that supports holding back watermarks with a static delay. */
 public class KeyedCoProcessOperatorWithWatermarkDelay<K, IN1, IN2, OUT>
         extends KeyedCoProcessOperator<K, IN1, IN2, OUT> {
-    private static final Logger LOGGER = LoggerFactory.getLogger(KeyedCoProcessOperatorWithWatermarkDelay.class);
+    private static final Logger LOGGER =
+            LoggerFactory.getLogger(KeyedCoProcessOperatorWithWatermarkDelay.class);
     private static final long serialVersionUID = -7435774708099223442L;
 
     private final Consumer<Watermark> emitter;
@@ -66,7 +67,7 @@ public class KeyedCoProcessOperatorWithWatermarkDelay<K, IN1, IN2, OUT>
             timeServiceManager.get().advanceWatermark(mark);
         }
         // watermark = 上游wm最小值减去最大的等待时间
-//        LOGGER.info("before watermark ======= " + mark);
+        //        LOGGER.info("before watermark ======= " + mark);
         emitter.accept(mark);
     }
 }

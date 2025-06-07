@@ -68,7 +68,7 @@ public final class RowTimeIntervalJoin extends TimeIntervalJoin {
 
     @Override
     void updateOperatorTime(Context ctx) {
-//        LOGGER.info("after watermark" + ctx.timerService().currentWatermark());
+        //        LOGGER.info("after watermark" + ctx.timerService().currentWatermark());
         leftOperatorTime =
                 ctx.timerService().currentWatermark() > 0
                         ? ctx.timerService().currentWatermark()

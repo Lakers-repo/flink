@@ -119,11 +119,11 @@ public class StreamWindowSQLExample {
                TUMBLE(TABLE Bid, DESCRIPTOR(bidtime), INTERVAL '10' MINUTES))
   ) WHERE rownum <= 3;
          */
-//        String query_window_tvf_agg =
-//                "SELECT\n" + "window_start, window_end,\n"
-//                        + "  COUNT(*) order_num\n"
-//                        + "FROM TABLE(TUMBLE(TABLE orders, DESCRIPTOR(ts), INTERVAL '5' SECONDS))\n"
-//                        + "GROUP BY window_start, window_end";
+        String query_window_tvf_agg =
+                "SELECT\n" + "window_start, window_end,\n"
+                        + "  COUNT(*) order_num\n"
+                        + "FROM TABLE(TUMBLE(TABLE orders, DESCRIPTOR(ts), INTERVAL '5' SECONDS))\n"
+                        + "GROUP BY window_start, window_end";
 
 //        String query_window_topn =
 //                "select user_id,product,amount, window_start,window_end "
@@ -139,11 +139,11 @@ public class StreamWindowSQLExample {
 //                        + "FROM TABLE(TUMBLE(TABLE orders, DESCRIPTOR(ts), INTERVAL '5' SECONDS))\n"
 //                        + ") where row_num <= 1";
 //            String query = "select user_id, product, amount, SUM(amount) OVER (PARTITION BY user_id ORDER BY ts RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) as row_num from orders";
-            String query = "select l.user_id, r.user_id from orders l, payments r where l.user_id=r.user_id and l.ts BETWEEN r.ts - INTERVAL '10' SECOND AND r.ts + INTERVAL '5' SECOND";
+//            String query = "select l.user_id, r.user_id from orders l, payments r where l.user_id=r.user_id and l.ts BETWEEN r.ts - INTERVAL '10' SECOND AND r.ts + INTERVAL '5' SECOND";
 
 
-//        logger.info(tEnv.explainSql(query, ExplainDetail.CHANGELOG_MODE));
-        tEnv.executeSql(query).print();
+        logger.info(tEnv.explainSql(query_window_tvf_agg, ExplainDetail.CHANGELOG_MODE));
+//        tEnv.executeSql(query_window_tvf_agg).print();
   // should output:
   // +----+--------------------------------+--------------+--------------+-----------------+
   // | op |                   window_start |    order_num | total_amount | unique_products |

@@ -268,6 +268,52 @@ object FlinkStreamProgram {
             .build())
         .build()
     )
+//    FlinkGroupProgramBuilder.newBuilder[StreamOptimizeContext]
+//    // logical rewrite
+//    chainedProgram.addLast(
+//      LOGICAL_REWRITE,
+//      if (tableConfig.get(OptimizerConfigOptions.TABLE_EXEC_MERGE_CALC)) {
+//        FlinkGroupProgramBuilder.newBuilder[StreamOptimizeContext]
+//          .addProgram(
+//            FlinkHepRuleSetProgramBuilder.newBuilder
+//              .setHepRulesExecutionType(HEP_RULES_EXECUTION_TYPE.RULE_SEQUENCE)
+//              .setHepMatchOrder(HepMatchOrder.BOTTOM_UP)
+//              .add(FlinkStreamRuleSets.CALC_BEFORE_LOGICAL_REWRITE)
+//              .build()
+//          )
+//          .addProgram(
+//            FlinkHepRuleSetProgramBuilder.newBuilder
+//              .setHepRulesExecutionType(HEP_RULES_EXECUTION_TYPE.RULE_SEQUENCE)
+//              .setHepMatchOrder(HepMatchOrder.BOTTOM_UP)
+//              .add(FlinkStreamRuleSets.LOGICAL_REWRITE)
+//              .build()
+//          )
+//          .addProgram(
+//            FlinkHepRuleSetProgramBuilder.newBuilder
+//              .setHepRulesExecutionType(HEP_RULES_EXECUTION_TYPE.RULE_SEQUENCE)
+//              .setHepMatchOrder(HepMatchOrder.BOTTOM_UP)
+//              .add(EventTimeTemporalJoinRewriteRule.EVENT_TIME_TEMPORAL_JOIN_REWRITE_RULES)
+//              .build())
+//          .build()
+//      } else {
+//        FlinkGroupProgramBuilder.newBuilder[StreamOptimizeContext]
+//          .addProgram(
+//            FlinkHepRuleSetProgramBuilder.newBuilder
+//              .setHepRulesExecutionType(HEP_RULES_EXECUTION_TYPE.RULE_SEQUENCE)
+//              .setHepMatchOrder(HepMatchOrder.BOTTOM_UP)
+//              .add(FlinkStreamRuleSets.LOGICAL_REWRITE)
+//              .build()
+//          )
+//          .addProgram(
+//            FlinkHepRuleSetProgramBuilder.newBuilder
+//              .setHepRulesExecutionType(HEP_RULES_EXECUTION_TYPE.RULE_SEQUENCE)
+//              .setHepMatchOrder(HepMatchOrder.BOTTOM_UP)
+//              .add(EventTimeTemporalJoinRewriteRule.EVENT_TIME_TEMPORAL_JOIN_REWRITE_RULES)
+//              .build())
+//          .build()
+//      }
+//
+//    )
 
     // convert time indicators
     chainedProgram.addLast(TIME_INDICATOR, new FlinkRelTimeIndicatorProgram)

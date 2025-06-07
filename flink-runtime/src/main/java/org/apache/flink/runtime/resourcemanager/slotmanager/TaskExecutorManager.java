@@ -153,6 +153,8 @@ class TaskExecutorManager implements AutoCloseable {
             SlotReport initialSlotReport,
             ResourceProfile totalResourceProfile,
             ResourceProfile defaultSlotResourceProfile) {
+        // 看是否超过了设置的最大slot数，默认是无穷大
+        // 所有已经注册的slot + pending slot + new slot > max slot number
         if (isMaxSlotNumExceededAfterRegistration(initialSlotReport)) {
             LOG.info(
                     "The total number of slots exceeds the max limitation {}, releasing the excess task executor.",
@@ -220,6 +222,8 @@ class TaskExecutorManager implements AutoCloseable {
     private void findAndRemoveExactlyMatchingPendingTaskManagerSlot(
             ResourceProfile resourceProfile) {
         for (PendingTaskManagerSlot pendingTaskManagerSlot : pendingSlots.values()) {
+            // 移除和新注册slot资源规格一样的pending slot
+            // 因为这里有可能会重复，之前在申请资源的时候，在TM还没有启动的时候，pending slots已经存在了
             if (isPendingSlotExactlyMatchingResourceProfile(
                     pendingTaskManagerSlot, resourceProfile)) {
                 pendingSlots.remove(pendingTaskManagerSlot.getTaskManagerSlotId());
@@ -275,6 +279,7 @@ class TaskExecutorManager implements AutoCloseable {
             return Optional.empty();
         }
 
+        // 新申请的slot都被加到pending slot中
         for (int i = 0; i < numSlotsPerWorker; ++i) {
             PendingTaskManagerSlot pendingTaskManagerSlot =
                     new PendingTaskManagerSlot(defaultSlotResourceProfile);

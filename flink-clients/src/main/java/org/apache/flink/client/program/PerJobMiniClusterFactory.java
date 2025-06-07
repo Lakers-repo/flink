@@ -18,6 +18,7 @@
 
 package org.apache.flink.client.program;
 
+import org.apache.flink.configuration.ClusterOptions;
 import org.apache.flink.configuration.ConfigConstants;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.RestOptions;
@@ -118,15 +119,21 @@ public final class PerJobMiniClusterFactory {
     private MiniClusterConfiguration getMiniClusterConfig(int maximumParallelism) {
         Configuration configuration = new Configuration(this.configuration);
 
+        // set the slot SlotSelectionStrategy to EvenlySpreadOutLocationPreferenceSlotSelectionStrategy
+//        configuration.set(ClusterOptions.EVENLY_SPREAD_OUT_SLOTS_STRATEGY, true);
+
         if (!configuration.contains(RestOptions.BIND_PORT)) {
             configuration.setString(RestOptions.BIND_PORT, "0");
         }
 
         int numTaskManagers =
                 configuration.getInteger(
+//                        ConfigConstants.LOCAL_NUMBER_TASK_MANAGER,3);
+//                        ConfigConstants.DEFAULT_LOCAL_NUMBER_TASK_MANAGER);
                         ConfigConstants.LOCAL_NUMBER_TASK_MANAGER,
                         ConfigConstants.DEFAULT_LOCAL_NUMBER_TASK_MANAGER);
 
+//        int numSlotsPerTaskManager = 10;
         int numSlotsPerTaskManager =
                 configuration
                         .getOptional(TaskManagerOptions.NUM_TASK_SLOTS)

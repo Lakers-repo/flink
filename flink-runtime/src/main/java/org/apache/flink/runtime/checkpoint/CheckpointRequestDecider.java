@@ -157,6 +157,7 @@ class CheckpointRequestDecider {
                         > maxConcurrentCheckpointAttempts) {
             return Optional.empty();
         }
+        // 如果有一个checkpoint还在进行中，那么就直接返回，直到上一次checkpoint完成
         if (pendingCheckpointsSizeSupplier.getAsInt() >= maxConcurrentCheckpointAttempts) {
             return Optional.of(queuedRequests.first())
                     .filter(CheckpointTriggerRequest::isForce)
@@ -165,6 +166,7 @@ class CheckpointRequestDecider {
 
         CheckpointTriggerRequest first = queuedRequests.first();
         if (!first.isForce() && first.isPeriodic) {
+            // 获取下一次checkpoint的等待时间
             long nextTriggerDelayMillis = nextTriggerDelayMillis(lastCompletionMs);
             if (nextTriggerDelayMillis > 0) {
                 queuedRequests
@@ -180,6 +182,9 @@ class CheckpointRequestDecider {
     }
 
     private long nextTriggerDelayMillis(long lastCheckpointCompletionRelativeTime) {
+        // 上一次完成checkpoint的时间 - 当前时间 + 最小暂停时间
+        // 有一种情况: 假设checkpoint interval是10min,最小间隔时间是2min，如果有一次checkpoint 10:00开始的，用了6min,也就是10:06完成的
+        // 理论上下一次checkpoint时间是10:05,但是由于我们配置了最小间隔时间是2min，所以10:06 - 10:07 + 2 > 0，需要等待一分钟也就是10：08才可以触发下一次cp
         return lastCheckpointCompletionRelativeTime
                 - clock.relativeTimeMillis()
                 + minPauseBetweenCheckpoints;

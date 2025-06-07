@@ -142,6 +142,20 @@ class LookupJoinITCase(legacyTableSource: Boolean, cacheType: LookupCacheType)
         s"'start-lookup-threshold'='$lookupThreshold',"
       } else ""
 
+      // print the generated sql
+      println(s"""
+                 |CREATE TABLE $tableName (
+                 |  `age` INT,
+                 |  `id` BIGINT,
+                 |  `name` STRING
+                 |) WITH (
+                 |  $cacheOptions
+                 |  $lookupThresholdOption
+                 |  'connector' = 'values',
+                 |  'data-id' = '$dataId'
+                 |)
+                 |""".stripMargin)
+
       tEnv.executeSql(s"""
                          |CREATE TABLE $tableName (
                          |  `age` INT,
@@ -190,6 +204,19 @@ class LookupJoinITCase(legacyTableSource: Boolean, cacheType: LookupCacheType)
 
   private def createScanTable(tableName: String, data: List[Row]): Unit = {
     val dataId = TestValuesTableFactory.registerData(data)
+    // print the generated sql
+    print(s"""
+             |CREATE TABLE $tableName (
+             |  `id` BIGINT,
+             |  `len` INT,
+             |  `content` STRING,
+             |  `proctime` AS PROCTIME()
+             |) WITH (
+             |  'connector' = 'values',
+             |  'data-id' = '$dataId'
+             |)
+             |""".stripMargin)
+
     tEnv.executeSql(s"""
                        |CREATE TABLE $tableName (
                        |  `id` BIGINT,

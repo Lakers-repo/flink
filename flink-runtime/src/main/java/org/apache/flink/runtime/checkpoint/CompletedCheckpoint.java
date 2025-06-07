@@ -92,6 +92,7 @@ public class CompletedCheckpoint implements Serializable, Checkpoint {
     private final long completionTimestamp;
 
     /** States of the different operator groups belonging to this checkpoint. */
+    // OperatorState 这个类不是 Flink 中常说的 OperatorState
     private final Map<OperatorID, OperatorState> operatorStates;
 
     /** Properties of this checkpoint. Might change during recovery. */

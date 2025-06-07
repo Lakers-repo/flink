@@ -38,6 +38,7 @@ public class DefaultResourceTracker implements ResourceTracker {
 
     private static final Logger LOG = LoggerFactory.getLogger(DefaultResourceTracker.class);
 
+    // 每一个job都有一个tracker
     private final Map<JobID, JobScopedResourceTracker> trackers = new HashMap<>();
 
     @Override

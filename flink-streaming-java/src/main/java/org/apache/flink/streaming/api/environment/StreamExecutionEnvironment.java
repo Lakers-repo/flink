@@ -51,7 +51,10 @@ import org.apache.flink.api.java.typeutils.MissingTypeInfo;
 import org.apache.flink.api.java.typeutils.PojoTypeInfo;
 import org.apache.flink.api.java.typeutils.ResultTypeQueryable;
 import org.apache.flink.api.java.typeutils.TypeExtractor;
+import org.apache.flink.configuration.ClusterOptions;
+import org.apache.flink.configuration.ConfigConstants;
 import org.apache.flink.configuration.ConfigOption;
+import org.apache.flink.configuration.ConfigOptions;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.CoreOptions;
 import org.apache.flink.configuration.DeploymentOptions;
@@ -61,6 +64,7 @@ import org.apache.flink.configuration.PipelineOptions;
 import org.apache.flink.configuration.ReadableConfig;
 import org.apache.flink.configuration.RestOptions;
 import org.apache.flink.configuration.StateChangelogOptions;
+import org.apache.flink.configuration.TaskManagerOptions;
 import org.apache.flink.core.execution.CacheSupportedPipelineExecutor;
 import org.apache.flink.core.execution.DefaultExecutorServiceLoader;
 import org.apache.flink.core.execution.DetachedJobExecutionResult;
@@ -2455,6 +2459,8 @@ public class StreamExecutionEnvironment implements AutoCloseable {
             Configuration copyOfConfiguration = new Configuration();
             copyOfConfiguration.addAll(configuration);
             copyOfConfiguration.set(CoreOptions.DEFAULT_PARALLELISM, defaultLocalParallelism);
+//            copyOfConfiguration.set(ConfigConstants.LOCAL_NUMBER_TASK_MANAGER, 3);
+//            copyOfConfiguration.set(ClusterOptions.)
             return new LocalStreamEnvironment(copyOfConfiguration);
         }
     }
