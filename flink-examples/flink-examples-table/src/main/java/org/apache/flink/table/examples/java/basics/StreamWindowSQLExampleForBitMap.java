@@ -46,7 +46,7 @@ public class StreamWindowSQLExampleForBitMap {
     public static void main(String[] args) throws Exception {
         // set up execution environment
         Configuration configuration = new Configuration();
-        configuration.setString("table.exec.mini-batch.enabled", "true");
+        configuration.setString("table.exec.mini-batch.enabled", "false");
         configuration.setString("table.exec.mini-batch.allow-latency", "10 s");
         configuration.setString("table.exec.mini-batch.size", "1");
         configuration.setString("table.exec.resource.default-parallelism","1");
@@ -70,6 +70,7 @@ public class StreamWindowSQLExampleForBitMap {
                 "0,25041737386170,10,2025-04-17 17:27:48\n"
                         + "0,25041737386170,20,2025-04-17 17:28:58\n"
                         + "0,25041737386170,20,2025-04-17 17:48:58\n"
+                        + "0,25041737386170,50,2025-04-17 17:49:58\n"
                         + "0,25041737386170,50,2025-04-17 17:49:58";
         String path = createTempFile(contents);
 

@@ -35,9 +35,9 @@ public class BitMapCountWithRetract extends AggregateFunction<Long, BitmapValue>
     }
 
     public void retract(BitmapValue acc, Long iValue) throws Exception {
-//        if (acc.serializeToString() == null || acc.serializeToString().equals("")) {
-//            return;
-//        }
+        if (acc.serializeToString() == null || acc.serializeToString().equals("")) {
+            return;
+        }
         if (iValue != null) {
             log.info("before retract element:{}, count:{}, retracted value:{}", acc.serializeToString(),acc.cardinality(),iValue);
             // only xor when the pre acc value is not blank
@@ -50,28 +50,28 @@ public class BitMapCountWithRetract extends AggregateFunction<Long, BitmapValue>
         }
     }
 
-    public void merge(BitmapValue acc, Iterable<BitmapValue> bitmapValues) {
-
-        for (BitmapValue bitmapValue : bitmapValues) {
-            if (bitmapValue != null) {
-                switch (bitmapValue.getBitmapType()) {
-                    case 0:
-                        break;
-                    case 1:
-                        acc.add(bitmapValue.getSingleValue());
-                        break;
-                    case 2:
-                        bitmapValue.getBitmap().forEach(acc::add);
-                        break;
-                    case 3:
-                        for (Long aLong : bitmapValue.getSet()) {
-                            acc.add(aLong);
-                        }
-                        break;
-                }
-            }
-        }
-    }
+//    public void merge(BitmapValue acc, Iterable<BitmapValue> bitmapValues) {
+//
+//        for (BitmapValue bitmapValue : bitmapValues) {
+//            if (bitmapValue != null) {
+//                switch (bitmapValue.getBitmapType()) {
+//                    case 0:
+//                        break;
+//                    case 1:
+//                        acc.add(bitmapValue.getSingleValue());
+//                        break;
+//                    case 2:
+//                        bitmapValue.getBitmap().forEach(acc::add);
+//                        break;
+//                    case 3:
+//                        for (Long aLong : bitmapValue.getSet()) {
+//                            acc.add(aLong);
+//                        }
+//                        break;
+//                }
+//            }
+//        }
+//    }
 
     public void resetAccumulator(BitmapValue acc) {
         acc.clear();
